@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "Run performance tests on Dat",
   "dependencies": {
+    "ansi-diff-stream": "^1.1.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.3",
     "tape": "^4.6.0",
