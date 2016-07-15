@@ -1,0 +1,21 @@
+{
+  "name": "dat-performance",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "tape index.js",
+    "test": "standard && tape test/*.js | tap-spec"
+  },
+  "bin": {
+    "dat-performance": "bin/cli.js"
+  },
+  "author": "Joe Hand <joe@joeahand.com> (http://joeahand.com/)",
+  "license": "ISC",
+  "description": "Run performance tests on Dat",
+  "dependencies": {
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.3",
+    "tape": "^4.6.0",
+    "tape-spawn": "^1.4.2"
+  }
+}
