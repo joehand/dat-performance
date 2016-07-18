@@ -1,4 +1,5 @@
 var fs = require('fs')
+var path = require('path')
 var differ = require('ansi-diff-stream')
 var prettyHrtime = require('pretty-hrtime')
 var ora = require('ora')
@@ -71,6 +72,7 @@ function testDirs (dirs, cb) {
   }
 
   function testDir (dir, cb) {
+    dir = path.resolve(dir)
     var datTest = DatTest(dir)
     timers.test = process.hrtime()
     msg.test = 'Testing ' + dir

@@ -31,7 +31,7 @@ if (!args.dirs.length) {
   ]
 }
 
-datTest(args.dirs, function (err, results) {
+datTest(args.dirs.slice(), function (err, results) {
   if (err) onerror(err)
   db.get('!datperformance!!key!', {valueEncoding: 'binary'}, function (_, key) {
     var feed = core.createFeed(key)
@@ -41,7 +41,7 @@ datTest(args.dirs, function (err, results) {
       })
     })
     db.put('!datperformance!!key!', feed.key)
-    output(feed, results, function () {
+    output(feed, args.dirs, function () {
       if (args.exit) {
         console.info('Results saved to hypercore: ', feed.key.toString('hex'))
         process.exit(0)
