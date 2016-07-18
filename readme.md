@@ -14,8 +14,9 @@ npm install dat-perfomance -g
 
 #### CLI
 
-`dat-performance <directory>` runs performance tests using dir.
+* `dat-performance` runs default tests
+* `dat-performance <directory>` runs performance tests on directory.
 
-#### Module
+## TODO 
 
-`npm start` to run performance test on sample datasets (currently only one dataset). 
+* Figure out how to share default test datasets

@@ -1,19 +1,65 @@
 #!/usr/bin/env node
 
-var datTest = require('../lib/dat-test')
+var path = require('path')
+var level = require('level')
+var home = require('os-homedir')
+var hypercore = require('hypercore')
+var swarm = require('hyperdrive-archive-swarm')
+var minimist = require('minimist')
+var output = require('../lib/output')
+var datTest = require('..')
 
-var dir = process.argv[2]
-if (!dir) {
-  console.error('Directory required')
-  process.exit(1)
+var args = minimist(process.argv.splice(2), {
+  boolean: ['exit'],
+  default: {
+    exit: true
+  }
+})
+args.dirs = args._
+
+var db = level(path.join(home(), '.datperformance.db'))
+var core = hypercore(db)
+
+if (!args.dirs.length) {
+  var moduleDir = path.dirname(require.resolve('..')) // Hacky. Don't want to have to include all the data to npm
+  var datasets = path.join(moduleDir, 'test', 'datasets')
+  args.dirs = [
+    path.join(datasets, 'basic')
+    // path.join(datasets, 'videos'),
+    // path.join(datasets, 'race_policing'),
+    // path.join(datasets, 'xray')
+  ]
 }
 
-datTest(dir, function (err, timers) {
-  if (err) {
-    console.error(err.message)
-    process.exit(1)
-  }
-  console.info('Share time: %ds %dms', timers.share[0], timers.share[1] / 1000000)
-  console.info('Download time: %ds %dms', timers.download[0], timers.download[1] / 1000000)
-  console.info('Total time: %ds %dms', timers.all[0], timers.all[1] / 1000000)
+datTest(args.dirs, function (err, results) {
+  if (err) onerror(err)
+  db.get('!datperformance!!key!', {valueEncoding: 'binary'}, function (_, key) {
+    var feed = core.createFeed(key)
+    feed.open(function () {
+      results.forEach(function (result) {
+        feed.append(result)
+      })
+    })
+    db.put('!datperformance!!key!', feed.key)
+    output(feed, results, function () {
+      if (args.exit) {
+        console.info('Results saved to hypercore: ', feed.key.toString('hex'))
+        process.exit(0)
+      }
+
+      var sw = swarm(feed)
+      console.info('Waiting for connections:', feed.key.toString('hex'))
+      sw.on('connection', function (peer, type) {
+        console.log('connected to', sw.connections, 'peers')
+        peer.on('close', function () {
+          console.log('peer disconnected')
+        })
+      })
+    })
+  })
 })
+
+function onerror (err) {
+  console.error(err.message)
+  process.exit(1)
+}

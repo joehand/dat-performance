@@ -3,7 +3,6 @@
   "version": "1.0.2",
   "main": "index.js",
   "scripts": {
-    "start": "tape index.js",
     "test": "standard && tape test/*.js | tap-spec"
   },
   "bin": {
@@ -14,9 +13,19 @@
   "description": "Run performance tests on Dat",
   "dependencies": {
     "ansi-diff-stream": "^1.1.0",
+    "hypercore": "^4.7.0",
+    "hyperdrive-archive-swarm": "^3.1.1",
+    "level": "^1.4.0",
+    "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
+    "ora": "^0.2.3",
+    "os-homedir": "^1.0.1",
+    "pretty-hrtime": "^1.0.2",
+    "pump": "^1.0.1",
     "rimraf": "^2.5.3",
+    "sparkly": "^3.1.2",
     "tape": "^4.6.0",
-    "tape-spawn": "^1.4.2"
+    "tape-spawn": "^1.4.2",
+    "through2": "^2.0.1"
   }
 }
