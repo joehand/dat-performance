@@ -1,43 +1,20 @@
 #!/usr/bin/env node
 
-var path = require('path')
 var minimist = require('minimist')
-var output = require('../lib/output')
-var DatPerformance = require('..')
 
 var args = minimist(process.argv.splice(2), {
-  boolean: ['exit'],
+  boolean: ['graph'],
   default: {
-    exit: true
+    graph: true
   }
 })
 
-args.dirs = args._
-
-if (!args.dirs.length) {
-  var moduleDir = path.dirname(require.resolve('..')) // Hacky. Don't want to have to include all the data to npm
-  var datasets = path.join(moduleDir, 'test', 'datasets')
-  args.dirs = [
-    path.join(datasets, 'basic'),
-    path.join(datasets, 'videos')
-    // path.join(datasets, 'race_policing'),
-    // path.join(datasets, 'xray')
-  ]
-}
-
-var datTest = DatPerformance()
-
-datTest.testDirs(args.dirs.slice(), function (err, results) {
-  if (err) onerror(err)
-  output(datTest.feed, args.dirs, function () {
-    if (args.exit) {
-      console.info('Results saved to hypercore: ', datTest.feed.key.toString('hex'))
-      process.exit(0)
-    }
-  })
-})
-
-function onerror (err) {
-  console.error(err.message)
+if (args._[0] === 'share') require('../commands/share')(args)
+else if (!args._[0]) require('../commands/test')(args)
+else {
+  console.error('Usage')
+  console.error('dat-performance                 run default tests')
+  console.error('dat-performance -dir=data/      run test on directory')
+  console.error('dat-performance share           share test results in feed')
   process.exit(1)
 }

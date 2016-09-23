@@ -15,7 +15,7 @@
     "ansi-diff-stream": "^1.1.0",
     "dat-js": "^3.5.1",
     "hypercore": "^4.7.0",
-    "level": "^1.4.0",
+    "level-party": "^3.0.4",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "ora": "^0.2.3",

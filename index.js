@@ -3,8 +3,9 @@ var fs = require('fs')
 var path = require('path')
 var util = require('util')
 var differ = require('ansi-diff-stream')
-var level = require('level')
+var level = require('level-party')
 var hypercore = require('hypercore')
+var swarm = require('hyperdrive-archive-swarm')
 var prettyHrtime = require('pretty-hrtime')
 var home = require('os-homedir')
 var ora = require('ora')
@@ -25,7 +26,19 @@ function DatPerformance () {
 
 util.inherits(DatPerformance, events.EventEmitter)
 
-DatPerformance.prototype.testDirs = function (dirs, cb) {
+DatPerformance.prototype._getFeed = function (cb) {
+  var self = this
+  self.db.get('!datperformance!!key!', {valueEncoding: 'binary'}, function (_, key) {
+    self.feed = self.core.createFeed(key)
+    self.key = self.feed.key
+    self.db.put('!datperformance!!key!', self.feed.key)
+    cb()
+  })
+}
+
+DatPerformance.prototype.test = function (dirs, cb) {
+  if (!dirs) throw new Error('Please specify directories to test')
+  if (typeof dirs === 'string') dirs = [dirs]
   var self = this
   var diff = differ()
   var lines = []
@@ -42,13 +55,7 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
   var results = []
   var printInterval = null
 
-  self.db.get('!datperformance!!key!', {valueEncoding: 'binary'}, function (_, key) {
-    self.feed = self.core.createFeed(key)
-    self.key = self.feed.key
-    self.db.put('!datperformance!!key!', self.feed.key)
-  })
-
-  run()
+  self._getFeed(run)
 
   function run () {
     msg.top = 'Running ' + testNum + ' tests'
@@ -74,8 +81,6 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
     clearInterval(printInterval)
     msg.top = 'Finished ' + testNum + ' tests'
     diff.write(print())
-    // spinner.color = 'green'
-    // spinner.text = 'Serving'
     spinner.stop()
     cb(null, results)
   }
@@ -91,7 +96,6 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
     }
     testDir(dir, function (err, result) {
       if (err) return cb(err)
-      console.log('appending to feed')
       self.feed.append(JSON.stringify(result), function (err) {
         if (err) return cb(err)
         results.push(result)
@@ -138,4 +142,18 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
     out.total_time = prettyMs(out.total_time)
     return prettyJSON.render(out)
   }
+}
+
+DatPerformance.prototype.share = function (opts, cb) {
+  if (typeof opts === 'function') return this.share(null, opts)
+  var self = this
+
+  self._getFeed(function (err) {
+    if (err) return cb(err)
+    var sw = swarm(self.feed, opts)
+    console.log('sharing dat performance feed:',self.feed.key.toString('hex'))
+    sw.on('connection', function () {
+      // console.log('connection')
+    })
+  })
 }
