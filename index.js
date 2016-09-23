@@ -1,13 +1,30 @@
+var events = require('events')
 var fs = require('fs')
 var path = require('path')
+var util = require('util')
 var differ = require('ansi-diff-stream')
+var level = require('level')
+var hypercore = require('hypercore')
+// var swarm = require('hyperdrive-archive-swarm')
 var prettyHrtime = require('pretty-hrtime')
+var home = require('os-homedir')
 var ora = require('ora')
 var DatTest = require('./lib/dat-test')
 
-module.exports = testDirs
+module.exports = DatPerformance
 
-function testDirs (dirs, cb) {
+function DatPerformance () {
+  if (!(this instanceof DatPerformance)) return new DatPerformance()
+  var self = this
+  events.EventEmitter.call(this)
+  self.db = level(path.join(home(), '.datperformance.db'))
+  self.core = hypercore(self.db)
+}
+
+util.inherits(DatPerformance, events.EventEmitter)
+
+DatPerformance.prototype.testDirs = function (dirs, cb) {
+  var self = this
   var diff = differ()
   var lines = []
   var testNum = dirs.length
@@ -22,6 +39,12 @@ function testDirs (dirs, cb) {
   }
   var results = []
   var printInterval = null
+
+  self.db.get('!datperformance!!key!', {valueEncoding: 'binary'}, function (_, key) {
+    self.feed = self.core.createFeed(key)
+    self.key = self.feed.key
+    self.db.put('!datperformance!!key!', self.feed.key)
+  })
 
   run()
 
@@ -66,8 +89,10 @@ function testDirs (dirs, cb) {
     }
     testDir(dir, function (err, result) {
       if (err) return cb(err)
-      results.push(result)
-      next()
+      self.feed.append(result, function () {
+        results.push(result)
+        next()
+      })
     })
   }
 

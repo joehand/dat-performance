@@ -9,7 +9,8 @@ test('Basic performance', function (t) {
   datTest.runTest(function (err, results) {
     t.error(err)
     t.ok(results, 'got results')
-  }, t)
+    t.end()
+  })
 
   datTest.once('share', function () {
     t.pass('share event')
