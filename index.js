@@ -5,10 +5,12 @@ var util = require('util')
 var differ = require('ansi-diff-stream')
 var level = require('level')
 var hypercore = require('hypercore')
-// var swarm = require('hyperdrive-archive-swarm')
 var prettyHrtime = require('pretty-hrtime')
 var home = require('os-homedir')
 var ora = require('ora')
+var prettyJSON = require('prettyjson')
+var prettyBytes = require('pretty-bytes')
+var prettyMs = require('pretty-ms')
 var DatTest = require('./lib/dat-test')
 
 module.exports = DatPerformance
@@ -89,7 +91,9 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
     }
     testDir(dir, function (err, result) {
       if (err) return cb(err)
-      self.feed.append(result, function () {
+      console.log('appending to feed')
+      self.feed.append(JSON.stringify(result), function (err) {
+        if (err) return cb(err)
         results.push(result)
         next()
       })
@@ -114,34 +118,24 @@ DatPerformance.prototype.testDirs = function (dirs, cb) {
       spinner.text = 'Done'
     })
 
-    datTest.runTest(function (err) {
+    datTest.runTest(function (err, result) {
       if (err) cb(err)
-      var end = datTest.timers.end
       timers.test = null
       lines[lines.length - 1] = ''
-      lines.push('Results ' + dir)
-      lines.push('Share time: ' + prettyHrtime(end.share))
-      lines.push('Download time: ' + prettyHrtime(end.download))
-      lines.push('Total time: ' + prettyHrtime(end.all))
+
+      lines.push('Results',prettyResult(result))
       lines.push('')
-      lines.push('')
-      cb(null, jsonResults(dir, end))
+      cb(null, result)
     })
   }
 
-  function jsonResults (folder, timers) {
-    var out = {
-      folder: folder,
-      share_time: toMiliSec(timers.share),
-      download_time: toMiliSec(timers.download),
-      total_time: toMiliSec(timers.all),
-      date: new Date()
-    }
-
-    return JSON.stringify(out)
-
-    function toMiliSec (hrArray) {
-      return (hrArray[0] * 1000000 + hrArray[1] / 1000) / 1000
-    }
+  function prettyResult (result) {
+    var out = Object.assign({}, result)
+    out.size.bytes = prettyBytes(out.size.bytes)
+    out.share_time = prettyMs(out.share_time)
+    out.connect_time = prettyMs(out.connect_time)
+    out.download_time = prettyMs(out.download_time)
+    out.total_time = prettyMs(out.total_time)
+    return prettyJSON.render(out)
   }
 }
